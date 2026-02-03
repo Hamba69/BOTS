@@ -1,0 +1,754 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TradingBot>
+  <!-- BASIC CONFIGURATION -->
+  <Configuration>
+    <BotName>VAIS</BotName>
+    <BotID>VAIS-001</BotID>
+    <Version>1.0</Version>
+    <Broker>Deriv</Broker>
+    <Platform>MT5</Platform>
+    <AssetClass>Commodities</AssetClass>
+    <CreationDate>2025-12-26</CreationDate>
+  </Configuration>
+
+  <!-- TRADING INSTRUMENTS -->
+  <Instruments>
+    <Instrument>
+      <Symbol>XAUUSD</Symbol>
+      <Description>Gold vs US Dollar</Description>
+      <Timeframe>M5</Timeframe>
+      <TicketValue>1.0</TicketValue>
+      <MinLotSize>0.01</MinLotSize>
+      <MaxLotSize>1.0</MaxLotSize>
+    </Instrument>
+  </Instruments>
+
+  <!-- STRATEGY DEFINITION -->
+  <Strategy>
+    <Name>VAIS Momentum Breakout Scalper</Name>
+    <Type>Hybrid</Type>
+    <Description>High-risk strategy combining breakout trading, momentum scalping, EMA pullbacks, volatility expansion, and support/resistance sniper entries for maximum profitability on 5-minute XAUUSD</Description>
+    <Components>
+      <Component>Breakout Trading</Component>
+      <Component>Momentum Scalping</Component>
+      <Component>EMA Pullback System</Component>
+      <Component>Volatility Expansion</Component>
+      <Component>Support Resistance Sniper</Component>
+    </Components>
+    <RiskLevel>High</RiskLevel>
+    <ExpectedWinRate>45-55%</ExpectedWinRate>
+    <RiskRewardRatio>2.5:1</RiskRewardRatio>
+  </Strategy>
+
+  <!-- TECHNICAL INDICATORS -->
+  <Indicators>
+    <Indicator>
+      <Name>EMA_Fast</Name>
+      <Type>ExponentialMovingAverage</Type>
+      <Period>9</Period>
+      <AppliedTo>Close</AppliedTo>
+      <Purpose>Fast trend direction and entry trigger</Purpose>
+    </Indicator>
+    
+    <Indicator>
+      <Name>EMA_Slow</Name>
+      <Type>ExponentialMovingAverage</Type>
+      <Period>21</Period>
+      <AppliedTo>Close</AppliedTo>
+      <Purpose>Trend confirmation and pullback reference</Purpose>
+    </Indicator>
+    
+    <Indicator>
+      <Name>RSI</Name>
+      <Type>RelativeStrengthIndex</Type>
+      <Period>14</Period>
+      <Overbought>85</Overbought>
+      <Oversold>15</Oversold>
+      <Purpose>Momentum confirmation and divergence detection</Purpose>
+    </Indicator>
+    
+    <Indicator>
+      <Name>ATR</Name>
+      <Type>AverageTrueRange</Type>
+      <Period>14</Period>
+      <MinimumValue>0.8</MinimumValue>
+      <Purpose>Volatility filter and dynamic stop/target calculation</Purpose>
+    </Indicator>
+    
+    <Indicator>
+      <Name>BollingerBands</Name>
+      <Type>BollingerBands</Type>
+      <Period>20</Period>
+      <Deviation>2.0</Deviation>
+      <Purpose>Volatility expansion and squeeze detection</Purpose>
+    </Indicator>
+    
+    <Indicator>
+      <Name>MACD</Name>
+      <Type>MACD</Type>
+      <FastEMA>12</FastEMA>
+      <SlowEMA>26</SlowEMA>
+      <SignalSMA>9</SignalSMA>
+      <Purpose>Trend strength and momentum confirmation</Purpose>
+    </Indicator>
+    
+    <Indicator>
+      <Name>SupportResistance</Name>
+      <Type>DynamicLevels</Type>
+      <LookbackPeriod>100</LookbackPeriod>
+      <TouchThreshold>3</TouchThreshold>
+      <Purpose>Key zones for sniper entries and limit orders</Purpose>
+    </Indicator>
+    
+    <Indicator>
+      <Name>Volume</Name>
+      <Type>Volume</Type>
+      <AveragePeriod>20</AveragePeriod>
+      <SpikeMultiplier>1.5</SpikeMultiplier>
+      <Purpose>Breakout confirmation</Purpose>
+    </Indicator>
+  </Indicators>
+
+  <!-- ENTRY CONDITIONS -->
+  <EntryConditions>
+    <LongEntry>
+      <Name>Sniper Long Entry</Name>
+      <Logic>AND</Logic>
+      <Conditions>
+        <Condition priority="1">
+          <Name>Trend_Alignment</Name>
+          <Rule>EMA_Fast > EMA_Slow</Rule>
+          <Description>Fast EMA above slow EMA confirms uptrend</Description>
+        </Condition>
+        
+        <Condition priority="2">
+          <Name>Breakout_Confirmation</Name>
+          <Rule>Price breaks above resistance level OR price > BollingerBands_Upper</Rule>
+          <Description>Price breaks key resistance or upper Bollinger Band</Description>
+        </Condition>
+        
+        <Condition priority="3">
+          <Name>Momentum_Check</Name>
+          <Rule>RSI > 40 AND RSI &lt; 70</Rule>
+          <Description>RSI shows momentum but not overbought</Description>
+        </Condition>
+        
+        <Condition priority="4">
+          <Name>MACD_Bullish</Name>
+          <Rule>MACD_Histogram > 0 AND MACD_Histogram increasing</Rule>
+          <Description>MACD histogram positive and expanding</Description>
+        </Condition>
+        
+        <Condition priority="5">
+          <Name>Volatility_Filter</Name>
+          <Rule>ATR > 0.8</Rule>
+          <Description>Sufficient volatility for profitable move</Description>
+        </Condition>
+        
+        <Condition priority="6">
+          <Name>Volume_Confirmation</Name>
+          <Rule>Current_Volume > Volume_MA * 1.3</Rule>
+          <Description>Volume spike confirms breakout strength</Description>
+        </Condition>
+        
+        <Condition priority="7">
+          <Name>Pullback_Entry</Name>
+          <Rule>Price touches EMA_Fast OR EMA_Slow AND bounces up</Rule>
+          <Description>Price pulls back to EMA and bounces for sniper entry</Description>
+          <Optional>true</Optional>
+        </Condition>
+      </Conditions>
+      
+      <ConfirmationRequired>
+        <MinConditionsMet>5</MinConditionsMet>
+        <MandatoryConditions>1,2,3,5</MandatoryConditions>
+      </ConfirmationRequired>
+    </LongEntry>
+    
+    <ShortEntry>
+      <Name>Sniper Short Entry</Name>
+      <Logic>AND</Logic>
+      <Conditions>
+        <Condition priority="1">
+          <Name>Trend_Alignment</Name>
+          <Rule>EMA_Fast &lt; EMA_Slow</Rule>
+          <Description>Fast EMA below slow EMA confirms downtrend</Description>
+        </Condition>
+        
+        <Condition priority="2">
+          <Name>Breakdown_Confirmation</Name>
+          <Rule>Price breaks below support level OR price &lt; BollingerBands_Lower</Rule>
+          <Description>Price breaks key support or lower Bollinger Band</Description>
+        </Condition>
+        
+        <Condition priority="3">
+          <Name>Momentum_Check</Name>
+          <Rule>RSI &lt; 60 AND RSI > 30</Rule>
+          <Description>RSI shows downward momentum but not oversold</Description>
+        </Condition>
+        
+        <Condition priority="4">
+          <Name>MACD_Bearish</Name>
+          <Rule>MACD_Histogram &lt; 0 AND MACD_Histogram decreasing</Rule>
+          <Description>MACD histogram negative and expanding downward</Description>
+        </Condition>
+        
+        <Condition priority="5">
+          <Name>Volatility_Filter</Name>
+          <Rule>ATR > 0.8</Rule>
+          <Description>Sufficient volatility for profitable move</Description>
+        </Condition>
+        
+        <Condition priority="6">
+          <Name>Volume_Confirmation</Name>
+          <Rule>Current_Volume > Volume_MA * 1.3</Rule>
+          <Description>Volume spike confirms breakdown strength</Description>
+        </Condition>
+        
+        <Condition priority="7">
+          <Name>Pullback_Entry</Name>
+          <Rule>Price touches EMA_Fast OR EMA_Slow AND rejects down</Rule>
+          <Description>Price pulls back to EMA and rejects for sniper entry</Description>
+          <Optional>true</Optional>
+        </Condition>
+      </Conditions>
+      
+      <ConfirmationRequired>
+        <MinConditionsMet>5</MinConditionsMet>
+        <MandatoryConditions>1,2,3,5</MandatoryConditions>
+      </ConfirmationRequired>
+    </ShortEntry>
+  </EntryConditions>
+
+  <!-- EXIT CONDITIONS -->
+  <ExitConditions>
+    <TakeProfit>
+      <Type>Dynamic</Type>
+      <Methods>
+        <Method priority="1">
+          <Name>ATR_Multiple</Name>
+          <Calculation>Entry_Price ± (2.5 * ATR)</Calculation>
+          <Description>Take profit at 2.5x ATR for optimal risk-reward</Description>
+        </Method>
+        
+        <Method priority="2">
+          <Name>Support_Resistance_Target</Name>
+          <Calculation>Next_Major_SR_Level</Calculation>
+          <Description>Exit at next major support/resistance level</Description>
+        </Method>
+        
+        <Method priority="3">
+          <Name>Bollinger_Band_Target</Name>
+          <Calculation>Opposite_BollingerBand</Calculation>
+          <Description>Exit when price reaches opposite Bollinger Band</Description>
+        </Method>
+      </Methods>
+      <UseWhichever>Closest_To_Entry</UseWhichever>
+    </TakeProfit>
+    
+    <StopLoss>
+      <Type>Dynamic</Type>
+      <Methods>
+        <Method priority="1">
+          <Name>ATR_Stop</Name>
+          <Calculation>Entry_Price ∓ (1.0 * ATR)</Calculation>
+          <Description>Initial stop at 1x ATR for tight risk control</Description>
+        </Method>
+        
+        <Method priority="2">
+          <Name>Structure_Stop</Name>
+          <Calculation>Below_Entry_Candle_Low OR Above_Entry_Candle_High</Calculation>
+          <Description>Stop below/above entry candle structure</Description>
+        </Method>
+        
+        <Method priority="3">
+          <Name>EMA_Stop</Name>
+          <Calculation>Below_EMA_Slow (Long) OR Above_EMA_Slow (Short)</Calculation>
+          <Description>Stop beyond EMA 21 for trend invalidation</Description>
+        </Method>
+      </Methods>
+      <UseWhichever>Tightest_Stop</UseWhichever>
+    </StopLoss>
+    
+    <TrailingStop>
+      <Enabled>true</Enabled>
+      <ActivationThreshold>1.5</ActivationThreshold>
+      <ActivationUnit>ATR</ActivationUnit>
+      <TrailingDistance>0.5</TrailingDistance>
+      <TrailingUnit>ATR</TrailingUnit>
+      <Description>Trail stop by 0.5 ATR after 1.5 ATR profit</Description>
+    </TrailingStop>
+    
+    <TimeBasedExit>
+      <Enabled>true</Enabled>
+      <MaxDuration>10</MaxDuration>
+      <Unit>Minutes</Unit>
+      <Condition>If neither SL nor TP hit</Condition>
+      <Description>Exit after 10 minutes if no significant movement</Description>
+    </TimeBasedExit>
+    
+    <IndicatorBasedExit>
+      <Exit>
+        <Name>EMA_Cross_Against</Name>
+        <Condition>EMA_Fast crosses against position direction</Condition>
+        <Action>Close_Immediately</Action>
+      </Exit>
+      
+      <Exit>
+        <Name>RSI_Extreme</Name>
+        <Condition>RSI > 85 (for longs) OR RSI &lt; 15 (for shorts)</Condition>
+        <Action>Close_Immediately</Action>
+        <Description>Exit at extreme overbought/oversold levels</Description>
+      </Exit>
+      
+      <Exit>
+        <Name>MACD_Reversal</Name>
+        <Condition>MACD_Histogram crosses zero against position</Condition>
+        <Action>Close_50_Percent</Action>
+        <Description>Close half position on MACD reversal signal</Description>
+      </Exit>
+    </IndicatorBasedExit>
+  </ExitConditions>
+
+  <!-- RISK MANAGEMENT -->
+  <RiskManagement>
+    <RiskPerTrade>
+      <Percentage>25</Percentage>
+      <Unit>AccountBalance</Unit>
+      <Description>Risk 25% of account balance per trade (middle of 20-30% range)</Description>
+    </RiskPerTrade>
+    
+    <DailyLoss>
+      <Limit>20</Limit>
+      <Unit>Percentage</Unit>
+      <Action>Stop_Trading</Action>
+      <ResetTime>00:00:00</ResetTime>
+      <Description>Stop trading if daily loss exceeds 20% of account balance</Description>
+    </DailyLoss>
+    
+    <WeeklyLoss>
+      <Limit>50</Limit>
+      <Unit>Percentage</Unit>
+      <Action>Stop_Trading</Action>
+      <ResetDay>Monday</ResetDay>
+      <Description>Stop trading if weekly loss exceeds 50% of account balance</Description>
+    </WeeklyLoss>
+    
+    <MonthlyLoss>
+      <Limit>50</Limit>
+      <Unit>Percentage</Unit>
+      <Action>Stop_Trading</Action>
+      <ResetDate>1</ResetDate>
+      <Description>Stop trading if monthly loss exceeds 50% of account balance</Description>
+    </MonthlyLoss>
+    
+    <MaxPositions>
+      <Concurrent>1</Concurrent>
+      <Description>Maximum of 1 position open at any time</Description>
+    </MaxPositions>
+    
+    <MaxPositionSize>
+      <Amount>1.0</Amount>
+      <Unit>Lots</Unit>
+      <Description>Maximum position size of 1 lot</Description>
+    </MaxPositionSize>
+    
+    <ConsecutiveLosses>
+      <MaxLosses>10</MaxLosses>
+      <Action>Stop_Trading</Action>
+      <CooldownPeriod>24</CooldownPeriod>
+      <CooldownUnit>Hours</CooldownUnit>
+      <Description>Stop trading after 10 consecutive losses with 24h cooldown</Description>
+    </ConsecutiveLosses>
+    
+    <MaxDrawdown>
+      <Limit>50</Limit>
+      <Unit>Percentage</Unit>
+      <Action>Stop_Trading_And_Alert</Action>
+      <Description>Stop trading if account drawdown exceeds 50%</Description>
+    </MaxDrawdown>
+    
+    <Leverage>
+      <Type>Unlimited</Type>
+      <Description>Account has unlimited leverage - use with extreme caution</Description>
+      <Warning>High leverage amplifies both profits and losses</Warning>
+    </Leverage>
+  </RiskManagement>
+
+  <!-- POSITION SIZING -->
+  <PositionSizing>
+    <Method>Volatility_Based_ATR</Method>
+    <Calculation>
+      <Formula>(Account_Balance * Risk_Percentage) / (ATR * Contract_Value)</Formula>
+      <Description>Position size based on ATR volatility for dynamic risk management</Description>
+    </Calculation>
+    
+    <Scaling>
+      <ScaleIn>false</ScaleIn>
+      <ScaleOut>true</ScaleOut>
+      <ScaleOutMethod>
+        <FirstTarget>50</FirstTarget>
+        <FirstTargetPercentage>50</FirstTargetPercentage>
+        <SecondTarget>100</SecondTarget>
+        <SecondTargetPercentage>50</SecondTargetPercentage>
+        <Description>Scale out 50% at first target, 50% at final target</Description>
+      </ScaleOutMethod>
+    </Scaling>
+    
+    <MinPositionSize>0.01</MinPositionSize>
+    <MaxPositionSize>1.0</MaxPositionSize>
+    <RoundTo>0.01</RoundTo>
+  </PositionSizing>
+
+  <!-- TIME-BASED RULES -->
+  <TradingSchedule>
+    <ActiveDays>
+      <Day>Monday</Day>
+      <Day>Tuesday</Day>
+      <Day>Wednesday</Day>
+      <Day>Thursday</Day>
+      <Day>Friday</Day>
+    </ActiveDays>
+    
+    <InactiveDays>
+      <Day>Saturday</Day>
+      <Day>Sunday</Day>
+    </InactiveDays>
+    
+    <TradingHours>
+      <StartTime>03:00:00</StartTime>
+      <EndTime>10:00:00</EndTime>
+      <Timezone>UTC</Timezone>
+      <Description>Trade between 3 AM and 10 AM UTC</Description>
+    </TradingHours>
+    
+    <SessionAvoidance>
+      <AvoidFirst>15</AvoidFirst>
+      <AvoidLast>15</AvoidLast>
+      <Unit>Minutes</Unit>
+      <Description>Avoid first/last 15 minutes of major session opens for volatility</Description>
+    </SessionAvoidance>
+    
+    <NewsAvoidance>
+      <Enabled>true</Enabled>
+      <EventsToAvoid>
+        <Event>FOMC_Meeting</Event>
+        <Event>NFP_Release</Event>
+        <Event>CPI_Data</Event>
+        <Event>GDP_Release</Event>
+        <Event>Interest_Rate_Decision</Event>
+        <Event>Central_Bank_Speech</Event>
+      </EventsToAvoid>
+      <AvoidBefore>30</AvoidBefore>
+      <AvoidAfter>30</AvoidAfter>
+      <Unit>Minutes</Unit>
+      <Description>Avoid trading 30 minutes before and after major news events</Description>
+    </NewsAvoidance>
+    
+    <HolidayAvoidance>
+      <Enabled>false</Enabled>
+      <Description>No specific holiday restrictions</Description>
+    </HolidayAvoidance>
+  </TradingSchedule>
+
+  <!-- MARKET CONDITIONS -->
+  <MarketConditions>
+    <VolatilityFilter>
+      <MinATR>0.8</MinATR>
+      <MaxATR>5.0</MaxATR>
+      <Description>Only trade when ATR is between 0.8 and 5.0</Description>
+    </VolatilityFilter>
+    
+    <TrendFilter>
+      <Enabled>true</Enabled>
+      <Method>EMA_Alignment</Method>
+      <Description>Prefer trending markets but can trade ranges with clear S/R</Description>
+      <AllowRangeTrading>true</AllowRangeTrading>
+    </TrendFilter>
+    
+    <VolumeFilter>
+      <Enabled>true</Enabled>
+      <MinVolume>Average_Volume * 0.7</MinVolume>
+      <Description>Require minimum 70% of average volume</Description>
+    </VolumeFilter>
+    
+    <SpreadFilter>
+      <MaxSpread>3.0</MaxSpread>
+      <Unit>Pips</Unit>
+      <Description>Avoid trading when spread exceeds 3 pips</Description>
+    </SpreadFilter>
+  </MarketConditions>
+
+  <!-- ORDER EXECUTION -->
+  <OrderExecution>
+    <OrderTypes>
+      <Type>
+        <Name>Market</Name>
+        <UseCase>Immediate execution on breakout confirmation</UseCase>
+        <Priority>1</Priority>
+      </Type>
+      
+      <Type>
+        <Name>Limit</Name>
+        <UseCase>Pullback entries at EMA or S/R levels</UseCase>
+        <Priority>2</Priority>
+        <Calculation>At support (long) or resistance (short) levels</Calculation>
+      </Type>
+      
+      <Type>
+        <Name>Stop</Name>
+        <UseCase>Breakout entries above resistance or below support</UseCase>
+        <Priority>3</Priority>
+      </Type>
+      
+      <Type>
+        <Name>StopLimit</Name>
+        <UseCase>Controlled breakout entries with price limit</UseCase>
+        <Priority>4</Priority>
+      </Type>
+    </OrderTypes>
+    
+    <LimitOrderCalculation>
+      <Method>Support_Resistance_Based</Method>
+      <LongLimit>Nearest_Support_Level</LongLimit>
+      <ShortLimit>Nearest_Resistance_Level</ShortLimit>
+      <Offset>0.2</Offset>
+      <OffsetUnit>ATR_Percentage</OffsetUnit>
+      <Description>Place limit orders at S/R levels with 20% ATR buffer</Description>
+    </LimitOrderCalculation>
+    
+    <Slippage>
+      <MaxSlippage>2.0</MaxSlippage>
+      <Unit>Pips</Unit>
+      <Action>Reject_Order</Action>
+      <Description>Reject orders if slippage exceeds 2 pips</Description>
+    </Slippage>
+    
+    <PartialFills>
+      <Allowed>true</Allowed>
+      <MinFillPercentage>80</MinFillPercentage>
+      <Description>Allow partial fills if at least 80% of order is executed</Description>
+    </PartialFills>
+    
+    <OrderExpiration>
+      <Duration>10</Duration>
+      <Unit>Minutes</Unit>
+      <Action>Cancel</Action>
+      <Description>Cancel unfilled orders after 10 minutes</Description>
+    </OrderExpiration>
+    
+    <ExecutionSpeed>
+      <Priority>High</Priority>
+      <MaxLatency>100</MaxLatency>
+      <LatencyUnit>Milliseconds</LatencyUnit>
+    </ExecutionSpeed>
+  </OrderExecution>
+
+  <!-- NOTIFICATIONS & MONITORING -->
+  <Notifications>
+    <Events>
+      <Event>
+        <Type>Trade_Entry</Type>
+        <Enabled>true</Enabled>
+        <Method>Platform_Alert</Method>
+        <Message>VAIS: {Direction} position opened on XAUUSD at {Price}</Message>
+      </Event>
+      
+      <Event>
+        <Type>Trade_Exit</Type>
+        <Enabled>true</Enabled>
+        <Method>Platform_Alert</Method>
+        <Message>VAIS: Position closed on XAUUSD at {Price} | P/L: {ProfitLoss}</Message>
+      </Event>
+      
+      <Event>
+        <Type>Stop_Loss_Hit</Type>
+        <Enabled>true</Enabled>
+        <Method>Platform_Alert</Method>
+        <Message>VAIS: Stop loss hit on XAUUSD | Loss: {Loss}</Message>
+      </Event>
+      
+      <Event>
+        <Type>Take_Profit_Hit</Type>
+        <Enabled>true</Enabled>
+        <Method>Platform_Alert</Method>
+        <Message>VAIS: Take profit hit on XAUUSD | Profit: {Profit}</Message>
+      </Event>
+      
+      <Event>
+        <Type>Error</Type>
+        <Enabled>true</Enabled>
+        <Method>Platform_Alert</Method>
+        <Priority>Critical</Priority>
+        <Message>VAIS ERROR: {ErrorType} - {ErrorDescription}</Message>
+      </Event>
+      
+      <Event>
+        <Type>Risk_Limit_Reached</Type>
+        <Enabled>true</Enabled>
+        <Method>Platform_Alert</Method>
+        <Priority>High</Priority>
+        <Message>VAIS: {LimitType} reached - Trading stopped</Message>
+      </Event>
+      
+      <Event>
+        <Type>Daily_Summary</Type>
+        <Enabled>true</Enabled>
+        <Method>Platform_Alert</Method>
+        <Time>23:00:00</Time>
+        <Message>VAIS Daily Summary: Trades: {TradeCount} | P/L: {DailyPL} | Win Rate: {WinRate}%</Message>
+      </Event>
+    </Events>
+    
+    <NotificationMethods>
+      <Method>
+        <Type>Platform_Alert</Type>
+        <Enabled>true</Enabled>
+        <Description>MT5 platform notifications</Description>
+      </Method>
+    </NotificationMethods>
+  </Notifications>
+
+  <!-- LOGGING -->
+  <Logging>
+    <Enabled>true</Enabled>
+    <LogLevel>Detailed</LogLevel>
+    <LogTypes>
+      <Type>Trade_Execution</Type>
+      <Type>Order_Placement</Type>
+      <Type>Order_Modification</Type>
+      <Type>Order_Cancellation</Type>
+      <Type>Indicator_Values</Type>
+      <Type>Entry_Conditions</Type>
+      <Type>Exit_Conditions</Type>
+      <Type>Risk_Calculations</Type>
+      <Type>Errors</Type>
+      <Type>Performance_Metrics</Type>
+    </LogTypes>
+    <StorageLocation>Local_And_Cloud</StorageLocation>
+    <RetentionPeriod>90</RetentionPeriod>
+    <RetentionUnit>Days</RetentionUnit>
+  </Logging>
+
+  <!-- EMERGENCY & FAIL-SAFES -->
+  <EmergencyProtocol>
+    <ConnectionLoss>
+      <Action>Flatten_All_Positions</Action>
+      <OrderType>Market</OrderType>
+      <RetryAttempts>3</RetryAttempts>
+      <RetryDelay>5</RetryDelay>
+      <RetryDelayUnit>Seconds</RetryDelayUnit>
+      <Description>Close all positions immediately if connection lost</Description>
+    </ConnectionLoss>
+    
+    <ErrorHandling>
+      <OnError>
+        <Action>Retry</Action>
+        <MaxRetries>3</MaxRetries>
+        <RetryDelay>10</RetryDelay>
+        <RetryDelayUnit>Seconds</RetryDelayUnit>
+      </OnError>
+      
+      <OnCriticalError>
+        <Action>Stop_And_Alert</Action>
+        <FlattenPositions>true</FlattenPositions>
+        <Description>Stop trading and alert on critical errors</Description>
+      </OnCriticalError>
+      
+      <ErrorTypes>
+        <CriticalError>Order_Execution_Failure</CriticalError>
+        <CriticalError>Account_Access_Denied</CriticalError>
+        <CriticalError>Insufficient_Margin</CriticalError>
+        <CriticalError>Connection_Timeout</CriticalError>
+      </ErrorTypes>
+    </ErrorHandling>
+    
+    <ManualOverride>
+      <Enabled>true</Enabled>
+      <Method>MT5_Platform</Method>
+      <Description>User can manually close trades via MT5 at any time</Description>
+      <BotResponse>Acknowledge_And_Continue</BotResponse>
+    </ManualOverride>
+    
+    <CircuitBreaker>
+      <Enabled>true</Enabled>
+      <Triggers>
+        <Trigger>
+          <Type>Rapid_Loss</Type>
+          <Threshold>15</Threshold>
+          <Unit>Percentage</Unit>
+          <Timeframe>15</Timeframe>
+          <TimeframeUnit>Minutes</TimeframeUnit>
+          <Action>Stop_Trading</Action>
+        </Trigger>
+        
+        <Trigger>
+          <Type>Abnormal_Spread</Type>
+          <Threshold>10</Threshold>
+          <Unit>Pips</Unit>
+          <Action>Pause_Trading</Action>
+        </Trigger>
+        
+        <Trigger>
+          <Type>Server_Lag</Type>
+          <Threshold>500</Threshold>
+          <Unit>Milliseconds</Unit>
+          <Action>Pause_New_Trades</Action>
+        </Trigger>
+      </Triggers>
+    </CircuitBreaker>
+  </EmergencyProtocol>
+
+  <!-- PERFORMANCE TRACKING -->
+  <PerformanceTracking>
+    <Metrics>
+      <Metric>Total_Trades</Metric>
+      <Metric>Winning_Trades</Metric>
+      <Metric>Losing_Trades</Metric>
+      <Metric>Win_Rate</Metric>
+      <Metric>Average_Win</Metric>
+      <Metric>Average_Loss</Metric>
+      <Metric>Profit_Factor</Metric>
+      <Metric>Sharpe_Ratio</Metric>
+      <Metric>Max_Drawdown</Metric>
+      <Metric>Recovery_Factor</Metric>
+      <Metric>Average_Trade_Duration</Metric>
+      <Metric>Expectancy</Metric>
+    </Metrics>
+    
+    <ReportingFrequency>
+      <Daily>true</Daily>
+      <Weekly>true</Weekly>
+      <Monthly>true</Monthly>
+    </ReportingFrequency>
+  </PerformanceTracking>
+
+  <!-- OPTIMIZATION SETTINGS -->
+  <Optimization>
+    <AutoOptimization>
+      <Enabled>false</Enabled>
+      <Description>Manual review required before parameter changes</Description>
+    </AutoOptimization>
+    
+    <BacktestingRequired>
+      <BeforeDeployment>true</BeforeDeployment>
+      <MinimumPeriod>3</MinimumPeriod>
+      <MinimumUnit>Months</MinimumUnit>
+    </BacktestingRequired>
+  </Optimization>
+
+  <!-- VERSION CONTROL -->
+  <VersionControl>
+    <CurrentVersion>1.0</CurrentVersion>
+    <LastModified>2025-12-26</LastModified>
+    <ModificationHistory>
+      <Change>
+        <Version>1.0</Version>
+        <Date>2025-12-26</Date>
+        <Description>Initial bot configuration created</Description>
+        <ModifiedBy>User</ModifiedBy>
+      </Change>
+    </ModificationHistory>
+  </VersionControl>
+
+</TradingBot>
